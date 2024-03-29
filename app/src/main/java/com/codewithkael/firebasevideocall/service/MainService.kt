@@ -4,33 +4,39 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.content.Context
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.core.app.ServiceCompat
+import androidx.core.content.ContextCompat
 import com.codewithkael.firebasevideocall.R
 import com.codewithkael.firebasevideocall.repository.MainRepository
 import com.codewithkael.firebasevideocall.service.MainServiceActions.*
 import com.codewithkael.firebasevideocall.utils.DataModel
 import com.codewithkael.firebasevideocall.utils.DataModelType
+import com.codewithkael.firebasevideocall.utils.IntentAction
+import com.codewithkael.firebasevideocall.utils.TYPE_OF_MODE
 import com.codewithkael.firebasevideocall.utils.isValid
 import com.codewithkael.firebasevideocall.webrtc.RTCAudioManager
 import dagger.hilt.android.AndroidEntryPoint
 import org.webrtc.SurfaceViewRenderer
 import javax.inject.Inject
 
+private const val TAG = "===>>MainService"
 @AndroidEntryPoint
 class MainService : Service(), MainRepository.Listener {
 
-    private val TAG = "MainService"
+
 
     private var isServiceRunning = false
     private var username: String? = null
 
     @Inject
     lateinit var mainRepository: MainRepository
-
     private lateinit var notificationManager: NotificationManager
     private lateinit var rtcAudioManager: RTCAudioManager
     private var isPreviousCallStateVideo = true
@@ -57,7 +63,10 @@ class MainService : Service(), MainRepository.Listener {
         intent?.let { incomingIntent ->
             when (incomingIntent.action) {
                 START_SERVICE.name -> handleStartService(incomingIntent)
-                SETUP_VIEWS.name -> handleSetupViews(incomingIntent)
+                SETUP_VIEWS.name -> {
+                    Log.d(TAG, "onStartCommand() called with: incomingIntent = ${SETUP_VIEWS.name}")
+                    handleSetupViews(incomingIntent)
+                }
                 END_CALL.name -> handleEndCall()
                 SWITCH_CAMERA.name -> handleSwitchCamera()
                 TOGGLE_AUDIO.name -> handleToggleAudio(incomingIntent)
@@ -68,7 +77,6 @@ class MainService : Service(), MainRepository.Listener {
                 else -> Unit
             }
         }
-
         return START_STICKY
     }
 
@@ -138,29 +146,29 @@ class MainService : Service(), MainRepository.Listener {
         endCallAndRestartRepository()
     }
 
-    private fun endCallAndRestartRepository(){
-        mainRepository.endCall()
-        endCallListener?.onCallEnded()
-        mainRepository.initWebrtcClient(username!!)
-    }
+
 
     private fun handleSetupViews(incomingIntent: Intent) {
-        val isCaller = incomingIntent.getBooleanExtra("isCaller",false)
-        val isVideoCall = incomingIntent.getBooleanExtra("isVideoCall",true)
-        val target = incomingIntent.getStringExtra("target")
+
+        val isCaller = incomingIntent.getBooleanExtra(IntentAction.isCaller,false)
+        val isVideoCall = incomingIntent.getBooleanExtra(IntentAction.isVideoCall,true)
+        val target = incomingIntent.getStringExtra(IntentAction.target)
+        val isUVC_Clicked = incomingIntent.getBooleanExtra("uvc",false)
         this.isPreviousCallStateVideo = isVideoCall
         mainRepository.setTarget(target!!)
         //initialize our widgets and start streaming our video and audio source
         //and get prepared for call
-        mainRepository.initLocalSurfaceView(localSurfaceView!!,isVideoCall)
-        mainRepository.initRemoteSurfaceView(remoteSurfaceView!!)
+        //host side  => isVideoCall = true isCaller =true target =guest
+        //guest side => isVideoCall = true isCaller =false target =host
+        Log.d(TAG, "handleSetupViews() called with: isVideoCall= $isVideoCall isCaller =$isCaller target =$target")
+        mainRepository.initLocalSurfaceView(localSurfaceView!!,isVideoCall,isUVC_Clicked)
+        mainRepository.initRemoteSurfaceView(remoteSurfaceView!!,isUVC_Clicked)
 
 
         if (!isCaller){
             //start the video call
             mainRepository.startCall()
         }
-
     }
 
     private fun handleStartService(incomingIntent: Intent) {
@@ -169,11 +177,15 @@ class MainService : Service(), MainRepository.Listener {
             isServiceRunning = true
             username = incomingIntent.getStringExtra("username")
             startServiceWithNotification()
-
             //setup my clients
             mainRepository.listener = this
             mainRepository.initFirebase()
-            mainRepository.initWebrtcClient(username!!)
+            if (TYPE_OF_MODE.RUN_UVC_MODE=="1"){
+                mainRepository.initHsRtcClient(username!!)
+            }else{
+                mainRepository.initWebrtcClient(username!!)
+            }
+
 
         }
     }
@@ -196,7 +208,16 @@ class MainService : Service(), MainRepository.Listener {
             ).setSmallIcon(R.mipmap.ic_launcher)
                 .addAction(R.drawable.ic_end_call,"Exit",pendingIntent)
 
-            startForeground(1, notification.build())
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                Log.d(TAG, "startServiceWithNotification: 1")
+                startForeground(1, notification.build(),ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA)
+              //  startForeground(1, notification.build())
+                }else  {
+                Log.d(TAG, "startServiceWithNotification: 2")
+                    startForeground(1, notification.build())
+            }
+
+
         }
     }
 
@@ -206,6 +227,7 @@ class MainService : Service(), MainRepository.Listener {
     }
 
     override fun onLatestEventReceived(data: DataModel) {
+        Log.d(TAG, "onLatestEventReceived: ----->${data}")
         if (data.isValid()) {
             when (data.type) {
                 DataModelType.StartVideoCall,
@@ -221,7 +243,11 @@ class MainService : Service(), MainRepository.Listener {
         //we are receiving end call signal from remote peer
         endCallAndRestartRepository()
     }
-
+    private fun endCallAndRestartRepository(){
+        mainRepository.endCall()
+        endCallListener?.onCallEnded()
+        mainRepository.initWebrtcClient(username!!)
+    }
     interface Listener {
         fun onCallReceived(model: DataModel)
     }

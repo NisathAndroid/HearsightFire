@@ -1,5 +1,6 @@
 package com.codewithkael.firebasevideocall.ui
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -14,30 +15,29 @@ import com.codewithkael.firebasevideocall.service.MainService
 import com.codewithkael.firebasevideocall.service.MainServiceRepository
 import com.codewithkael.firebasevideocall.utils.DataModel
 import com.codewithkael.firebasevideocall.utils.DataModelType
+import com.codewithkael.firebasevideocall.utils.TYPE_OF_MODE
 import com.codewithkael.firebasevideocall.utils.getCameraAndMicPermission
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, MainService.Listener {
+
     private val TAG = "MainActivity"
 
     private lateinit var views: ActivityMainBinding
     private var username: String? = null
-
     @Inject
     lateinit var mainRepository: MainRepository
     @Inject
     lateinit var mainServiceRepository: MainServiceRepository
     private var mainAdapter: MainRecyclerViewAdapter? = null
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         views = ActivityMainBinding.inflate(layoutInflater)
         setContentView(views.root)
         init()
     }
-
     private fun init() {
         username = intent.getStringExtra("username")
         if (username == null) finish()
@@ -46,7 +46,6 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
         //2. start foreground service to listen negotiations and calls.
         startMyService()
     }
-
     private fun subscribeObservers() {
         setupRecyclerView()
         MainService.listener = this
@@ -55,7 +54,6 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
             mainAdapter?.updateList(it)
         }
     }
-
     private fun setupRecyclerView() {
         mainAdapter = MainRecyclerViewAdapter(this)
         val layoutManager = LinearLayoutManager(this)
@@ -64,52 +62,68 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
             adapter = mainAdapter
         }
     }
-
     private fun startMyService() {
         mainServiceRepository.startService(username!!)
     }
-
     override fun onVideoCallClicked(username: String) {
         //check if permission of mic and camera is taken
         getCameraAndMicPermission {
             mainRepository.sendConnectionRequest(username, true) {
                 if (it){
-                    //we have to start video call
-                    //we wanna create an intent to move to call activity
-                    startActivity(Intent(this,CallActivity::class.java).apply {
-                        putExtra("target",username)
-                        putExtra("isVideoCall",true)
-                        putExtra("isCaller",true)
-                    })
+
+                    if (TYPE_OF_MODE.RUN_UVC_MODE=="1"){
+                        //we have to start video call
+                        //we wanna create an intent to move to call activity
+                        startActivity(Intent(this,HSCallActivity::class.java).apply {
+                            putExtra("target",username)
+                            putExtra("isVideoCall",true)
+                            putExtra("isCaller",true)
+                        })
+                    }else{
+                        //we have to start video call
+                        //we wanna create an intent to move to call activity
+                        startActivity(Intent(this,CallActivity::class.java).apply {
+                            putExtra("target",username)
+                            putExtra("isVideoCall",true)
+                            putExtra("isCaller",true)
+                        })
+                    }
+
 
                 }
             }
 
         }
     }
-
     override fun onAudioCallClicked(username: String) {
         getCameraAndMicPermission {
             mainRepository.sendConnectionRequest(username, false) {
                 if (it){
-                    //we have to start audio call
-                    //we wanna create an intent to move to call activity
-                    startActivity(Intent(this,CallActivity::class.java).apply {
-                        putExtra("target",username)
-                        putExtra("isVideoCall",false)
-                        putExtra("isCaller",true)
-                    })
+                    if (TYPE_OF_MODE.RUN_UVC_MODE=="1"){
+                        startActivity(Intent(this, HSCallActivity::class.java).apply {
+                            putExtra("target", username)
+                            putExtra("isVideoCall", false)
+                            putExtra("isCaller", true)
+                        })
+                    }else {
+                        //we have to start audio call
+                        //we wanna create an intent to move to call activity
+                        startActivity(Intent(this, CallActivity::class.java).apply {
+                            putExtra("target", username)
+                            putExtra("isVideoCall", false)
+                            putExtra("isCaller", true)
+                        })
+                    }
                 }
             }
         }
     }
-
     override fun onBackPressed() {
         super.onBackPressed()
         mainServiceRepository.stopService()
     }
-
     override fun onCallReceived(model: DataModel) {
+        Log.d(TAG, "onCallReceived: ------> ${model}")
         runOnUiThread {
             views.apply {
                 val isVideoCall = model.type == DataModelType.StartVideoCall
@@ -119,12 +133,24 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
                 acceptButton.setOnClickListener {
                     getCameraAndMicPermission {
                         incomingCallLayout.isVisible = false
-                        //create an intent to go to video call activity
-                        startActivity(Intent(this@MainActivity,CallActivity::class.java).apply {
-                            putExtra("target",model.sender)
-                            putExtra("isVideoCall",isVideoCall)
-                            putExtra("isCaller",false)
-                        })
+
+
+
+                        if (TYPE_OF_MODE.RUN_UVC_MODE=="1"){
+                            //create an intent to go to video call activity
+                            startActivity(Intent(this@MainActivity,HSCallActivity::class.java).apply {
+                                putExtra("target",model.sender)
+                                putExtra("isVideoCall",isVideoCall)
+                                putExtra("isCaller",false)
+                            })
+                        }else{
+                            //create an intent to go to video call activity
+                            startActivity(Intent(this@MainActivity,CallActivity::class.java).apply {
+                                putExtra("target",model.sender)
+                                putExtra("isVideoCall",isVideoCall)
+                                putExtra("isCaller",false)
+                            })
+                        }
                     }
                 }
                 declineButton.setOnClickListener {
@@ -134,6 +160,5 @@ class MainActivity : AppCompatActivity(), MainRecyclerViewAdapter.Listener, Main
             }
         }
     }
-
 
 }

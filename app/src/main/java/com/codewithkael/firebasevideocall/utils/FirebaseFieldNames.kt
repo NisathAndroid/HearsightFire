@@ -5,3 +5,7 @@ object FirebaseFieldNames {
     const val PASSWORD = "password"
     const val LATEST_EVENT = "latest_event"
 }
+object TYPE_OF_MODE{
+    //1-uvc camera ,2-phone camera
+    const val RUN_UVC_MODE="1"
+}

@@ -9,6 +9,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import org.webrtc.SurfaceViewRenderer
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -25,4 +26,8 @@ class AppModule {
 
     @Provides
     fun provideDatabaseReference(db:FirebaseDatabase): DatabaseReference = db.reference
+    @Provides
+    fun provideSurfaceViewRender(@ApplicationContext context:Context): SurfaceViewRenderer = SurfaceViewRenderer(context)
+    @Provides
+    fun provideVcall():Boolean = false
 }

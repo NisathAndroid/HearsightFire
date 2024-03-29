@@ -1,5 +1,6 @@
 package com.codewithkael.firebasevideocall.firebaseClient
 
+import android.util.Log
 import com.codewithkael.firebasevideocall.utils.DataModel
 import com.codewithkael.firebasevideocall.utils.FirebaseFieldNames.LATEST_EVENT
 import com.codewithkael.firebasevideocall.utils.FirebaseFieldNames.PASSWORD
@@ -12,6 +13,7 @@ import com.google.gson.Gson
 import javax.inject.Inject
 import javax.inject.Singleton
 
+private const val TAG = "===>>FirebaseClient"
 @Singleton
 class FirebaseClient @Inject constructor(
     private val dbRef:DatabaseReference,
@@ -87,6 +89,7 @@ class FirebaseClient @Inject constructor(
                             e.printStackTrace()
                             null
                         }
+                        Log.d(TAG, "onDataChange() called with: snapshot = $event")
                         event?.let {
                             listener.onLatestEventReceived(it)
                         }
@@ -99,7 +102,9 @@ class FirebaseClient @Inject constructor(
     }
 
     fun sendMessageToOtherClient(message:DataModel, success:(Boolean) -> Unit){
+
         val convertedMessage = gson.toJson(message.copy(sender = currentUsername))
+        Log.d(TAG, "sendMessageToOtherClient: message =$convertedMessage")
         dbRef.child(message.target).child(LATEST_EVENT).setValue(convertedMessage)
             .addOnCompleteListener {
                 success(true)

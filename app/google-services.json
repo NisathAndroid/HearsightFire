@@ -1,37 +1,46 @@
 {
   "project_info": {
-    "project_number": "12957448847",
-    "firebase_url": "https://fir-videocall-d1cf8-default-rtdb.europe-west1.firebasedatabase.app",
-    "project_id": "fir-videocall-d1cf8",
-    "storage_bucket": "fir-videocall-d1cf8.appspot.com"
+    "project_number": "58676096337",
+    "firebase_url": "https://webrtc-android-3ca67-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "webrtc-android-3ca67",
+    "storage_bucket": "webrtc-android-3ca67.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:12957448847:android:abea1125f53b8d133b0efa",
+        "mobilesdk_app_id": "1:58676096337:android:ca5453c74be8f2793df770",
         "android_client_info": {
           "package_name": "com.codewithkael.firebasevideocall"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "12957448847-ao0slpr11b5pcbb589q9jsujt13otk2r.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyCcxKqsrfEZfUJuPu6yMpLiHgYmpm68xHE"
+          "current_key": "AIzaSyDZJ8D8ZnUYnSXE03DCAQE1ifcdYcpSLPI"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "12957448847-ao0slpr11b5pcbb589q9jsujt13otk2r.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:58676096337:android:b1235590f28f8ab73df770",
+        "android_client_info": {
+          "package_name": "com.codewithkael.webrtcprojectforrecord"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDZJ8D8ZnUYnSXE03DCAQE1ifcdYcpSLPI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
         }
       }
     }

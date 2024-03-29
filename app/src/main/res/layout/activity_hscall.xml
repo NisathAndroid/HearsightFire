@@ -2,7 +2,9 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context=".ui.HSCallActivity">
 
     <org.webrtc.SurfaceViewRenderer
         android:layout_width="match_parent"
@@ -47,7 +49,7 @@
             android:textColor="@color/white"
             android:padding="10dp"
             android:id="@+id/callTitleTv"
-            android:text="Video Call With Masoud"/>
+            android:text="Video Call With advantech"/>
 
         <CheckBox
             android:id="@+id/uvcCheckBox"
